@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<!-- Empêche le zoom automatique sur mobile et adapte la largeur à l'écran du téléphone -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teguis Panneau de contrôle</title>
+<!-- Fichier de config PWA : permet "Ajouter à l'écran d'accueil" sur téléphone/ordinateur -->
+<link rel="manifest" href="manifest.json">
+<!-- Couleur de la barre de statut/navigateur quand l'app est installée -->
+<meta name="theme-color" content="#F1E8D9">
+<!-- Icône utilisée par iOS quand l'app est ajoutée à l'écran d'accueil -->
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<!-- Toute l'apparence visuelle vient de ce seul fichier CSS -->
+<link rel="stylesheet" href="css/style.css">
+<!-- Bibliothèque MQTT.js chargée globalement : accessible ensuite via window.mqtt dans mqttClient.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.3.4/mqtt.min.js"></script>
+<!-- Bibliothèque Chart.js chargée globalement : utilisée par dashboard.js pour les mini-graphiques capteurs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- Barre du haut : marque + salutation + bouton d'accès aux réglages -->
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true">NK</div>
+    <div>
+      <h1>NkentseuHome</h1>
+      <!-- Rempli dynamiquement (salutation + date du jour), voir setGreeting() dans app.js -->
+      <div class="subtitle" id="greeting">Panneau de contrôle domotique</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <!-- Masqué par défaut ; affiché seulement si le navigateur signale que l'installation
+         est possible (voir "beforeinstallprompt" dans app.js) — jamais un bouton mort. -->
+    <button id="install-app-btn" class="btn-icon" hidden>⬇ Installer l'app</button>
+    <!-- Ouvre la modale de réglages, voir écouteur "open-settings-btn" dans app.js -->
+    <button id="open-settings-btn" class="btn-icon">⚙ Réglages</button>
+  </div>
+</div>
+
+<!-- Grille principale : chaque .panel est une carte du tableau de bord -->
+<div class="grid">
+
+  <!-- Panneau 1 : connexion au broker MQTT -->
+  <div class="panel">
+    <!-- Le voyant "conn-led" change de couleur via setLed() dans app.js -->
+    <div class="panel-label"><span class="panel-icon teal" aria-hidden="true">📡</span><span class="led" id="conn-led"></span>Connexion broker</div>
+    <!-- Déclenche mqttClient.connect(...), voir écouteur "connect-btn" dans app.js -->
+    <button class="btn-primary" id="connect-btn">Connecter</button>
+  </div>
+
+  <!-- Panneau 2 : assistant vocal -->
+  <div class="panel">
+    <div class="panel-label"><span class="panel-icon" aria-hidden="true">🎙️</span><span class="led" id="mic-led"></span>Teguis</div>
+    <!-- Déclenche speech.start(), voir écouteur "mic-btn" dans app.js -->
+    <button id="mic-btn" aria-label="Activer le micro">●</button>
+    <!-- Rempli dynamiquement avec la phrase transcrite (voir onResult dans app.js) -->
+    <div id="transcript">—</div>
+    <!-- Rempli avec la clé de réponse audio jouée (ex: "lumiere salon on") -->
+    <div id="last-response"></div>
+  </div>
+
+  <!-- Panneau 3 : liste des contrôles relais, générée entièrement par renderRooms() (dashboard.js) -->
+  <div class="panel">
+    <div class="panel-label"><span class="panel-icon" aria-hidden="true">💡</span>Commandes</div>
+    <div id="relay-list"></div>
+  </div>
+
+  <!-- Panneau : scènes personnalisées (boutons générés par renderScenes(), scenes.js) -->
+  <div class="panel">
+    <div class="panel-label"><span class="panel-icon" aria-hidden="true">🎬</span>Scènes</div>
+    <div id="scene-buttons"></div>
+  </div>
+
+  <!-- Panneau (pleine largeur) : consommation électrique — graphique en direct + bilan à la demande -->
+  <div class="panel full">
+    <div class="panel-label"><span class="panel-icon teal" aria-hidden="true">⚡</span>Énergie</div>
+    <div class="energy-live-row">
+      <div class="energy-live-card">
+        <span class="energy-live-label">Éclairage</span>
+        <span class="energy-live-value" id="energy-live-eclairage">—</span>
+      </div>
+      <div class="energy-live-card">
+        <span class="energy-live-label">Autres appareils</span>
+        <span class="energy-live-value" id="energy-live-appareils">—</span>
+      </div>
+      <div class="energy-live-card">
+        <span class="energy-live-label">Total (session)</span>
+        <span class="energy-live-value" id="energy-live-total">—</span>
+      </div>
+    </div>
+    <div class="energy-chart-wrap">
+      <canvas id="energy-chart"></canvas>
+    </div>
+    <!-- Déclenche generateBilan(...), voir écouteur "energy-bilan-btn" dans app.js -->
+    <button id="energy-bilan-btn" class="btn-secondary" style="margin-top:12px;">Générer le bilan</button>
+    <div id="energy-bilan-output" class="energy-bilan-output"></div>
+
+    <!-- Historique persistant (jour/semaine/mois/année), voir energy.js -->
+    <div class="energy-history-block">
+      <div class="panel-label" style="margin:18px 0 10px 0;">Historique de consommation</div>
+      <div class="energy-period-tabs" id="energy-period-tabs">
+        <button class="period-tab active" data-periode="jour">Jour</button>
+        <button class="period-tab" data-periode="semaine">Semaine</button>
+        <button class="period-tab" data-periode="mois">Mois</button>
+        <button class="period-tab" data-periode="annee">Année</button>
+      </div>
+      <div id="energy-history-output" class="energy-bilan-output"></div>
+      <!-- Déclenche exportHistoryCsv(...), voir écouteur "energy-export-btn" dans app.js -->
+      <button id="energy-export-btn" class="btn-secondary" style="margin-top:10px;">⬇ Exporter (.csv)</button>
+    </div>
+  </div>
+
+  <!-- Panneau 4 (pleine largeur) : cartes de capteurs, créées à la volée par updateSensorUI() -->
+  <div class="panel full">
+    <div class="panel-label"><span class="panel-icon teal" aria-hidden="true">📊</span>Monitoring capteurs</div>
+    <div id="sensor-cards"></div>
+  </div>
+
+  <!-- Panneau 5 (pleine largeur) : journal d'activité, rempli par la fonction log() dans app.js -->
+  <div class="panel full">
+    <div class="panel-label"><span class="panel-icon" aria-hidden="true">🗒️</span>Journal</div>
+    <div id="cmd-log"></div>
+  </div>
+
+</div>
+
+<!-- Conteneur des notifications toast (portail ouvert/fermé, accès autorisé/refusé...) —
+     voir showToast() dans notifications.js. Positionné en CSS, pas un .panel du dashboard. -->
+<div id="toast-container"></div>
+
+<!-- Modal de réglages : masquée par défaut en CSS, affichée via la classe "open" (voir app.js) -->
+<div id="settings-modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <strong>Réglages</strong>
+      <!-- Ferme la modale sans appliquer, voir écouteur "close-settings-btn" dans app.js -->
+      <button id="close-settings-btn" class="btn-icon">✕</button>
+    </div>
+    <!-- Rempli entièrement par renderSettings() (settingsPanel.js) à l'ouverture -->
+    <div id="settings-body"></div>
+  </div>
+</div>
+
+<!-- type="module" : autorise les import/export ES6 utilisés dans tous les js/*.js.
+     NÉCESSITE un serveur HTTP (http:// ou https://) — ne fonctionne PAS en double-cliquant
+     directement sur ce fichier (file://), voir README section hébergement. -->
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

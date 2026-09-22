@@ -1,0 +1,349 @@
+/* =============================================================
+   TEGUIS — thème "Maison chaleureuse"
+   -------------------------------------------------------------
+   Direction : un panneau domotique qui ressemble à un intérieur
+   habité (murs lin, lumière ambrée, verdure) plutôt qu'à un
+   écran de contrôle industriel. La chaleur vient du fond crème
+   et de la police Fraunces sur les titres ; la lisibilité vient
+   du gris-brun sobre du texte et de Plus Jakarta Sans partout
+   ailleurs. Le mono (IBM Plex Mono) est réservé aux données
+   techniques (topics, URL broker, journal) — c'est le seul endroit
+   où l'app "avoue" être un outil MQTT sous le capot.
+
+   Variables CSS globales — settingsPanel.js modifie --bg, --panel,
+   --amber, --teal, --text en direct (applyTheme()) : tout le reste
+   du CSS lit ces variables, donc le thème se met à jour partout
+   instantanément quand l'utilisateur change une couleur.
+   ============================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root{
+  /* --- Fond & surfaces : lin crème, cartes ivoire, bordures sable --- */
+  --bg:#F1E8D9;               /* mur de fond, chaleureux et doux */
+  --panel:#FBF8F2;            /* cartes — ivoire, se détache légèrement du fond */
+  --panel-border:#E7DBC4;     /* bordure sable, discrète */
+  --panel-border-strong:#D9C9AC;
+
+  /* --- Texte : brun café plutôt que noir pur, plus chaleureux --- */
+  --text:#332A20;
+  --text-dim:#6E6151;
+
+  /* --- Accents : ambre cuivré (lumière allumée) + sauge (statut/données) --- */
+  --amber:#DE8F3C;             /* accent principal — évoque une lampe allumée */
+  --amber-strong:#C97A2B;
+  --amber-tint:#F7E4C6;
+  --teal:#5E8F79;               /* accent secondaire — sauge, valeurs/capteurs/connexion */
+  --teal-tint:#DCEAE1;
+  --red:#C15C4A;                /* alerte — terracotta plutôt que rouge criard */
+
+  --shadow-sm: 0 2px 8px rgba(51, 42, 32, 0.06);
+  --shadow-md: 0 10px 28px rgba(51, 42, 32, 0.10);
+  --shadow-glow: 0 0 0 6px rgba(222, 143, 60, 0.14);
+
+  --radius-lg:22px;
+  --radius-md:14px;
+  --radius-sm:9px;
+
+  --display: 'Fraunces', 'Iowan Old Style', serif;             /* titres — la personnalité de la page */
+  --sans: 'Plus Jakarta Sans', -apple-system, 'Segoe UI', sans-serif; /* texte courant, UI */
+  --mono: 'IBM Plex Mono', 'Courier New', monospace;             /* données techniques uniquement */
+}
+
+*{ box-sizing:border-box; }
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; }
+}
+
+::selection{ background:var(--amber-tint); color:var(--amber-strong); }
+
+body{
+  background:
+    radial-gradient(1100px 520px at 12% -8%, rgba(255,255,255,0.55), transparent 60%),
+    radial-gradient(900px 480px at 100% 0%, rgba(94,143,121,0.08), transparent 55%),
+    var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  margin:0;
+  padding:20px;
+  min-height:100vh;
+  transition:background .25s;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* Focus visible clavier — cohérent partout, jamais supprimé */
+:focus-visible{ outline:2px solid var(--amber-strong); outline-offset:2px; border-radius:4px; }
+
+/* ---------------- En-tête ---------------- */
+.topbar{
+  display:flex; justify-content:space-between; align-items:center;
+  background:var(--panel);
+  border:1px solid var(--panel-border);
+  border-radius:var(--radius-lg);
+  padding:16px 22px;
+  margin-bottom:18px;
+  box-shadow:var(--shadow-sm);
+  gap:16px; flex-wrap:wrap;
+}
+.brand{ display:flex; align-items:center; gap:14px; }
+.brand-mark{
+  width:44px; height:44px; border-radius:13px;
+  background:linear-gradient(155deg, var(--amber), var(--amber-strong));
+  color:#fff; font-family:var(--display); font-weight:700; font-size:20px;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 6px 14px rgba(201,122,43,0.35);
+  flex-shrink:0;
+}
+h1{
+  font-family:var(--display);
+  font-size:22px;
+  font-weight:600;
+  letter-spacing:0.2px;
+  color:var(--text);
+  margin:0;
+  line-height:1.1;
+}
+.subtitle{ font-size:13px; color:var(--text-dim); margin-top:3px; }
+.topbar-right{ display:flex; align-items:center; gap:10px; }
+
+/* ---------------- Grille principale ---------------- */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));
+  gap:16px;
+}
+.panel{
+  background:var(--panel);
+  border:1px solid var(--panel-border);
+  border-radius:var(--radius-lg);
+  padding:20px;
+  box-shadow:var(--shadow-sm);
+  transition:background .25s, box-shadow .2s, transform .2s;
+}
+.panel:hover{ box-shadow:var(--shadow-md); }
+
+.panel-label{
+  font-family:var(--sans);
+  font-size:12.5px;
+  font-weight:700;
+  letter-spacing:0.3px;
+  text-transform:uppercase;
+  color:var(--text-dim);
+  display:flex; align-items:center; gap:10px;
+  margin-bottom:16px;
+}
+/* Badge icône rond en tête de chaque panneau (voir spans .panel-icon ajoutés en HTML) */
+.panel-icon{
+  width:30px; height:30px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:15px; flex-shrink:0;
+  background:var(--amber-tint);
+}
+.panel-icon.teal{ background:var(--teal-tint); }
+
+/* Petit voyant rond : terracotta par défaut (déconnecté/inactif) */
+.led{ width:8px; height:8px; border-radius:50%; background:var(--red); box-shadow:0 0 6px rgba(193,92,74,0.5); flex-shrink:0; transition:background .2s, box-shadow .2s; }
+.led.on{ background:var(--teal); box-shadow:0 0 6px rgba(94,143,121,0.6); }
+
+/* ---------------- Champs & boutons ---------------- */
+input{
+  width:100%;
+  background:#fff;
+  border:1px solid var(--panel-border-strong);
+  color:var(--text);
+  padding:10px 12px;
+  border-radius:var(--radius-sm);
+  font-family:var(--mono);
+  font-size:13px;
+  margin-bottom:9px;
+  transition:border-color .15s, box-shadow .15s;
+}
+input::placeholder{ color:var(--text-dim); opacity:0.75; }
+input:focus{ border-color:var(--amber); box-shadow:0 0 0 3px rgba(222,143,60,0.15); outline:none; }
+/* Les sélecteurs de couleur natifs n'ont pas besoin (et ne supportent pas bien) width:100% */
+input[type="color"]{ width:44px; height:34px; padding:3px; margin-bottom:0; flex-shrink:0; cursor:pointer; }
+.settings-section label{ gap:10px; }
+
+button{ cursor:pointer; border:none; border-radius:var(--radius-sm); font-family:var(--sans); font-weight:700; font-size:13.5px; padding:10px 18px; transition:transform .12s, box-shadow .12s, background .15s, filter .15s; }
+button:hover{ filter:brightness(1.03); }
+button:active{ transform:translateY(1px); }
+
+.btn-primary{ background:linear-gradient(155deg, var(--amber), var(--amber-strong)); color:#2A1A0A; box-shadow:0 4px 12px rgba(201,122,43,0.28); }
+.btn-secondary{ background:#fff; color:var(--text); border:1px solid var(--panel-border-strong); }
+.btn-icon{ background:#fff; color:var(--text-dim); border:1px solid var(--panel-border-strong); font-weight:600; }
+.btn-icon:hover{ color:var(--text); border-color:var(--amber); }
+
+/* ---------------- Panneau connexion ---------------- */
+#connect-btn{ margin-top:2px; }
+
+/* ---------------- Assistant vocal ---------------- */
+#mic-btn{
+  width:78px; height:78px; border-radius:50%;
+  background:var(--panel);
+  border:2px solid var(--amber);
+  color:var(--amber-strong);
+  font-size:22px; display:flex; align-items:center; justify-content:center;
+  margin:4px auto 16px auto;
+  box-shadow:var(--shadow-sm);
+  position:relative;
+}
+#mic-btn::before{
+  content:""; position:absolute; inset:-8px; border-radius:50%;
+  border:1.5px solid var(--amber); opacity:0; transition:opacity .2s;
+}
+#mic-btn.listening{
+  background:radial-gradient(circle at 50% 40%, var(--amber), var(--amber-strong));
+  color:#2A1A0A;
+  box-shadow:0 0 0 8px rgba(222,143,60,0.16), 0 0 24px rgba(222,143,60,0.4);
+  animation:lamp-pulse 1.6s ease-in-out infinite;
+}
+#mic-btn.listening::before{ opacity:1; animation:ring-pulse 1.6s ease-out infinite; }
+@keyframes lamp-pulse{
+  0%, 100%{ box-shadow:0 0 0 8px rgba(222,143,60,0.16), 0 0 24px rgba(222,143,60,0.4); }
+  50%{ box-shadow:0 0 0 12px rgba(222,143,60,0.1), 0 0 32px rgba(222,143,60,0.55); }
+}
+@keyframes ring-pulse{
+  0%{ inset:-8px; opacity:0.6; }
+  100%{ inset:-20px; opacity:0; }
+}
+#transcript{ font-family:var(--mono); font-size:13px; color:var(--teal); min-height:20px; text-align:center; margin-bottom:6px; }
+#last-response{ font-size:12px; color:var(--text-dim); text-align:center; }
+
+/* ---------------- Commandes (relais) ---------------- */
+.relay-row{ display:flex; justify-content:space-between; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid var(--panel-border); }
+.relay-row:last-child{ border-bottom:none; }
+.relay-icon{
+  width:32px; height:32px; border-radius:10px; flex-shrink:0;
+  background:var(--amber-tint);
+  display:flex; align-items:center; justify-content:center; font-size:15px;
+}
+.relay-main{ display:flex; align-items:center; gap:11px; min-width:0; }
+.relay-name{ font-size:14px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* Toggle : un <div> stylé en interrupteur (pas un vrai checkbox) */
+.toggle{ width:46px; height:26px; border-radius:13px; background:#E4D7BE; position:relative; cursor:pointer; transition:background .18s; flex-shrink:0; }
+.toggle.on{ background:linear-gradient(155deg, var(--amber), var(--amber-strong)); box-shadow:var(--shadow-glow); }
+.toggle::after{ content:""; width:20px; height:20px; border-radius:50%; background:#fff; position:absolute; top:3px; left:3px; transition:left .18s; box-shadow:0 1px 3px rgba(0,0,0,0.2); }
+.toggle.on::after{ left:23px; }
+
+/* ---------------- Monitoring capteurs ---------------- */
+#sensor-cards{ display:grid; grid-template-columns:repeat(auto-fill, minmax(148px,1fr)); gap:12px; min-height:20px; }
+/* Etat vide : tant qu'aucun capteur n'a encore publié, on l'explique plutôt que de laisser un vide muet */
+#sensor-cards:empty::before{
+  content:"En attente de données capteurs — elles apparaîtront ici automatiquement dès qu'un appareil publiera.";
+  font-size:13px; color:var(--text-dim); font-style:italic; grid-column:1/-1;
+}
+.sensor-card{ background:#fff; border:1px solid var(--panel-border); border-radius:var(--radius-md); padding:13px; transition:box-shadow .15s; }
+.sensor-card:hover{ box-shadow:var(--shadow-sm); }
+.sensor-topic{ font-family:var(--mono); font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:6px; display:flex; align-items:center; gap:5px; }
+.sensor-value-row{ display:flex; align-items:baseline; gap:8px; }
+.sensor-value{ font-family:var(--display); font-weight:600; font-size:22px; color:var(--teal); }
+.sensor-trend{ font-size:13px; font-weight:700; }
+.sensor-trend.up{ color:var(--amber-strong); }
+.sensor-trend.down{ color:var(--teal); }
+
+/* ---------------- Journal ---------------- */
+#cmd-log{ font-family:var(--mono); font-size:11.5px; color:var(--text-dim); max-height:150px; overflow-y:auto; line-height:1.7; }
+#cmd-log::-webkit-scrollbar{ width:6px; }
+#cmd-log::-webkit-scrollbar-thumb{ background:var(--panel-border-strong); border-radius:4px; }
+
+/* ---------------- Scènes personnalisées ---------------- */
+#scene-buttons{ display:flex; flex-wrap:wrap; gap:8px; }
+.scene-btn{
+  background:var(--teal-tint); color:var(--teal); border:1px solid transparent;
+  padding:9px 14px; border-radius:999px; font-size:13px; font-weight:700;
+}
+.scene-btn:hover{ border-color:var(--teal); background:#fff; }
+.scene-row{ background:#fff; border:1px solid var(--panel-border); border-radius:var(--radius-md); padding:12px; margin-bottom:10px; }
+.scene-row input, .scene-row textarea{ font-family:var(--sans); font-size:13px; resize:vertical; width:100%; margin-bottom:8px; box-sizing:border-box; }
+.btn-remove-scene{ background:var(--red); color:#fff; padding:6px 11px; font-size:12px; margin-top:2px; }
+
+/* ---------------- Énergie ---------------- */
+.energy-live-row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+.energy-live-card{
+  flex:1; min-width:130px; background:#fff; border:1px solid var(--panel-border);
+  border-radius:var(--radius-md); padding:12px 14px;
+  display:flex; flex-direction:column; gap:4px;
+}
+.energy-live-label{ font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.3px; }
+.energy-live-value{ font-family:var(--display); font-weight:600; font-size:20px; color:var(--amber-strong); }
+.energy-chart-wrap{ height:180px; position:relative; }
+.energy-bilan-output{ margin-top:14px; font-size:13.5px; line-height:1.6; color:var(--text); }
+.energy-bilan-output ul{ margin:6px 0 0 0; padding-left:20px; }
+.energy-history-block{ border-top:1px solid var(--panel-border); margin-top:6px; padding-top:4px; }
+.energy-period-tabs{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:4px; }
+.period-tab{
+  background:var(--panel-alt, #fff); border:1px solid var(--panel-border); color:var(--text-dim);
+  padding:7px 14px; border-radius:999px; font-size:12.5px; font-weight:700;
+}
+.period-tab.active{ background:var(--amber-strong, var(--amber)); border-color:transparent; color:#fff; }
+.period-tab:hover:not(.active){ border-color:var(--amber); color:var(--amber); }
+.energy-bilan-output .muted{ color:var(--text-dim); font-size:12.5px; }
+
+/* ---------------- Notifications toast ---------------- */
+#toast-container{
+  position:fixed; top:16px; right:16px; z-index:300;
+  display:flex; flex-direction:column; gap:10px;
+  pointer-events:none; max-width:min(340px, 90vw);
+}
+.toast{
+  background:var(--panel); border:1px solid var(--panel-border); border-radius:var(--radius-md);
+  padding:12px 16px; box-shadow:var(--shadow-md); font-size:13.5px; font-weight:600; color:var(--text);
+  opacity:0; transform:translateY(-8px); transition:opacity .25s, transform .25s;
+  border-left:4px solid var(--amber);
+}
+.toast.show{ opacity:1; transform:translateY(0); }
+.toast-success{ border-left-color:var(--teal); }
+.toast-danger{ border-left-color:var(--red); }
+.toast-info{ border-left-color:var(--amber); }
+
+.full{ grid-column:1/-1; }
+
+/* ---------------- Modal réglages ---------------- */
+#settings-modal{
+  display:none;
+  position:fixed; inset:0; background:rgba(51,42,32,0.45); backdrop-filter:blur(2px);
+  align-items:center; justify-content:center; z-index:100; padding:16px;
+}
+#settings-modal.open{ display:flex; }
+#settings-modal .modal-content{
+  background:var(--panel); border:1px solid var(--panel-border); border-radius:var(--radius-lg);
+  padding:26px; width:min(560px, 92vw); max-height:85vh; overflow-y:auto;
+  box-shadow:0 24px 60px rgba(51,42,32,0.25);
+}
+.settings-section{ margin-bottom:20px; }
+.settings-section h3{ font-family:var(--sans); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.3px; color:var(--text-dim); margin:0 0 11px 0; }
+.settings-section label{ display:flex; align-items:center; justify-content:space-between; font-size:13px; margin-bottom:9px; color:var(--text); }
+.room-row{ display:flex; gap:6px; margin-bottom:7px; align-items:center; }
+.room-row input{ margin-bottom:0; }
+.btn-remove-room{ background:var(--red); color:#fff; padding:7px 11px; }
+.modal-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+.modal-header strong{ font-family:var(--display); font-size:17px; font-weight:600; }
+
+/* ---------------- Verrou d'accès (auth.js) ---------------- */
+#access-gate{
+  position:fixed; inset:0;
+  background:
+    radial-gradient(1100px 520px at 12% -8%, rgba(255,255,255,0.5), transparent 60%),
+    var(--bg);
+  display:flex; align-items:center; justify-content:center; z-index:200; padding:16px;
+}
+#access-gate .gate-box{
+  background:var(--panel); border:1px solid var(--panel-border); border-radius:var(--radius-lg);
+  padding:32px; width:min(340px, 90vw); text-align:center;
+  box-shadow:var(--shadow-md);
+}
+#access-gate .panel-label{ justify-content:center; margin-bottom:18px; }
+#access-gate .gate-box input{ margin-top:6px; text-align:center; }
+#access-gate .btn-primary{ width:100%; margin-top:6px; }
+.gate-error{ color:var(--red); font-size:12px; margin-top:10px; min-height:16px; font-weight:600; }
+
+/* ---------------- Responsive : mobile ---------------- */
+@media (max-width:520px){
+  body{ padding:12px; }
+  .topbar{ padding:14px 16px; }
+  h1{ font-size:19px; }
+  .panel{ padding:16px; }
+  #mic-btn{ width:68px; height:68px; }
+}
