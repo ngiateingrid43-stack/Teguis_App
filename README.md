@@ -207,3 +207,5 @@ Pour que le tableau soit complet : ton ESP32 doit se connecter au **même broker
 - **Persistance des réglages** : manuelle via export/import JSON dans ce livrable ; automatique si tu ajoutes `localStorage` une fois hébergé hors de Claude.ai (voir section 4)
 - **HTTPS obligatoire** en production pour le micro et un futur service worker (PWA)
 - **Sécurité d'accès** : le verrou de mot de passe intégré est une gêne, pas une vraie protection — voir section 5 pour ce qu'il faut ajouter côté infrastructure avant tout déploiement réel
+
+## Développer par NGIATE KAMNANG INGRID membre de Rihen
