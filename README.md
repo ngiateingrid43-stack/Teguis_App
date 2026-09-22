@@ -1,11 +1,5 @@
 # Teguis — Application web de contrôle domotique
 
-> ## 🔧 Corrections apportées à cette version
-> 1. **Bug critique corrigé — préfixe de topic incohérent.** L'app publiait/écoutait sur `maison/...` en dur, alors que ton firmware ESP32 utilise `TOPIC_PREFIX "teguis_dashboard_01"` (dans `config.h`). Résultat : l'app et l'ESP32 ne se voyaient JAMAIS, même avec une connexion MQTT réussie des deux côtés. C'est corrigé : le préfixe est maintenant une vraie valeur de config (`CONFIG.topics.prefix`, éditable dans ⚙ Réglages), et il doit être **identique** aux deux endroits. Vérifie/édite ce champ dans Réglages pour qu'il corresponde exactement à ton `config.h`.
-> 2. **Support PWA ajouté** (`manifest.json` + `service-worker.js`) : tu peux maintenant "Ajouter à l'écran d'accueil" sur ton téléphone (Chrome Android : menu ⋮ → "Ajouter à l'écran d'accueil" ; Safari iOS : Partager → "Sur l'écran d'accueil") et sur ordinateur (icône d'installation dans la barre d'adresse Chrome). L'app se comporte alors comme une vraie appli, avec sa propre icône, sans onglet navigateur.
-> 3. **Contrôle depuis n'importe où :** ton broker (`MQTT_SERVER` en `wss://...hivemq.cloud`) est déjà sur Internet, donc dès que ton **app web est elle-même hébergée en HTTPS** (voir section 1, étape 8) plutôt que juste en local sur `python3 -m http.server`, tu peux l'ouvrir depuis ton téléphone en 4G, un autre Wi-Fi, ou n'importe où — pas besoin d'être sur le même réseau que ton ESP32. Le `python3 -m http.server` reste utile pour développer/tester en local, mais n'est PAS accessible depuis l'extérieur de ton réseau.
-
-
 Panneau de contrôle domotique en JavaScript pur (ES Modules), sans framework ni étape de build. Fonctionne sur n'importe quel navigateur moderne (desktop, Android, iOS) à partir d'un simple hébergement statique en HTTPS.
 
 ---
